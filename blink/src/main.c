@@ -13,8 +13,8 @@ init_mcu ();
       
 //led_toggle (RED_LED);
 
-//led_toggle (GREEN_LED);
+led_toggle (GREEN_LED);
 
-led_toggle (BLUE_LED);
+led_on (BLUE_LED);
 //delay();
 }}
