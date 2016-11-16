@@ -1,0 +1,4 @@
+fix uart
+    blink a led when send done etc...
+    connect to terminal and blink a led when key pressed
+    try adc
