@@ -1,0 +1,44 @@
+--- src/printf.c	2016-11-10 13:48:14.946810247 +0100
++++ ../uart/src/printf.c	2016-11-10 16:53:21.594056890 +0100
+@@ -4,10 +4,10 @@
+ #define LINE_FEED 0xA
+ #define CAR_RETURN 0xD
+ 
+-void SWString(char * string);
++void SWString(unsigned char * string);
+ void SWUInt(unsigned int dataword);
+ void SWInt(int num);
+-void printf_x(const char *format, ...)
++void printf_x(const unsigned char *format, ...)
+ {
+ 	unsigned int pos = 0;
+ 	va_list args;
+@@ -22,7 +22,7 @@
+ 
+ 			if(format[pos] == '\0')
+ 			{
+-				return;
++				return ;
+ 			}
+ 
+ 			switch(format[pos])
+@@ -54,8 +54,8 @@
+ 
+ 		else if(format[pos] == '\n')
+ 		{
+-			uart_send(0xC);
+-			//uart_send(LINE_FEED); //On windows New-Line is 'CR+LF'
++			uart_send(CAR_RETURN);
++			uart_send(LINE_FEED); //On windows New-Line is 'CR+LF'
+ 		}
+ 		else
+ 		{
+@@ -67,7 +67,7 @@
+ 	}
+ 
+ 	
+-	void SWString(char * string)
++	void SWString(unsigned char * string)
+ 	{
+ 			uart_send_text( string );
+ 	}
