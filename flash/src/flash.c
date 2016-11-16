@@ -11,64 +11,49 @@
 #define SEG_SIZE 512
 #endif
 
-//#define SEG_SIZE 128
-
 void init_flash()
 {
 
-     IE1 = ACCVIE; 
+     IE1 = ACCVIE; //Enable NMI
 }
 
-void flash_write_single(int block, int seg, int val)
-{
-   unsigned int * address;
-
-    address = (int *) ((block * BLOCK_SIZE) +
-                                (seg * SEG_SIZE) + START_ADDR);
-
-    printf_x(" \n write address is %i \n", address);
-
-    FCTL3 = FWKEY;      //UNLOCK
-    FCTL2 = FWKEY + FSSEL_1 + FN2;
-    FCTL1 = FWKEY + WRT;
-    *address = val;
-    FCTL1 = FWKEY;
-    FCTL3 = FWKEY + LOCK;
-    printf_x(" char is %i \n",address);
-
-}
+/* Write Block
+  --calculate the address based on block number & seg number
+  --BLKWRT isn't possible since code is on flash so write each char
+ */
 
 void flash_write_block(int block, int seg,  unsigned char *val)
 {
     unsigned char *address;
     int i;
- 
+
+/* Calculate the block address */ 
     address = (unsigned char *) ((block * BLOCK_SIZE) +
                                  (seg * SEG_SIZE) + START_ADDR);
 
     while (*val) {
-    FCTL2 = FWKEY + FSSEL_1 + FN2;
+    FCTL2 = FWKEY + FSSEL_1 + FN2; //Mclk divided by 3 (~330KHZ)
     
-    while (FCTL3 & BUSY);
+    while (FCTL3 & BUSY);         //Loop while flash is busy
 
-    FCTL3 = FWKEY;                  //UNLOCK
-    FCTL1 = FWKEY + WRT;
+    FCTL3 = FWKEY;                //unlock
+    FCTL1 = FWKEY + WRT;          //configure write 
 
-    *address  = *val;
+    *address  = *val;             //write to address
 
     address +=1;
     val +=1;
  
-    printf_x(" char is %i \n", address);
-    printf_x(" seg size is %i \n", SEG_SIZE);
-
-    FCTL1 = FWKEY;
+    FCTL1 = FWKEY;                //Clear write
     while (FCTL3 & BUSY);
-    FCTL3 = FWKEY + LOCK;
-    delay ();    
-}
+    FCTL3 = FWKEY + LOCK;         //lock
+    delay ();                     //wait for a while before writing again
+    }   
 
 }
+/* Read a block
+   --calculate the address based on the block & seg numbers
+*/
 
 void flash_read_block(int block, int seg, unsigned char *buffer)
 {   
@@ -76,46 +61,47 @@ void flash_read_block(int block, int seg, unsigned char *buffer)
     unsigned char *address;
     address = (unsigned char *) ((block * BLOCK_SIZE) + 
                                 (seg * SEG_SIZE) + START_ADDR);
-//    FCTL2 = FWKEY + FSSEL_1 + FN0;
-    printf_x(" char is %i \n", address);
-    while (*buffer) { 
-        *buffer = *address;
-        buffer+=1;
-        address+=1;
+
+     while (*buffer) {          //Read until string termination
+         *buffer = *address;
+         buffer+=1;
+         address+=1;
     }
 
     printf_x(" %s \n", buffer);
 }
 
+/* Erase a segment */
+
 void flash_erase(unsigned int seg)
 {    
-    FCTL2 = FWKEY + FSSEL_1 + FN2;
+    FCTL2 = FWKEY + FSSEL_1 + FN2;  // MCLK div by 3 (~330KHZ)
     unsigned int *address;
-    address = (int *) ((seg * SEG_SIZE) + START_ADDR);
+    address = (int *) ((seg * SEG_SIZE) + START_ADDR);//calulate segment
 
-    printf_x("read address is %i", address);
-
-    FCTL3 = FWKEY;      //UNLOCK
-    FCTL1 = FWKEY + ERASE;// + MERAS;
-    *(address +1 ) = 0;
+    FCTL3 = FWKEY;          //unlock
+    FCTL1 = FWKEY + ERASE;  //set erase;
+    *(address +1 ) = 0;     //write to a random byte in the address space
     
-    while (FCTL3 & BUSY);
-     //   printf_x("waiting \n");
-    //FCTL1 = FWKEY;
-    FCTL3 = FWKEY + LOCK;
+    while (FCTL3 & BUSY);   //Wait
+    FCTL3 = FWKEY + LOCK;   //lock and finish
 }
+
+/* NMI Interrupt handler for ACCVIFG (cpu trying to access while flash is busy)*/
 
 #pragma vector = NMI_VECTOR 
 __interrupt void nmi()
 {
     if (FCTL3 & ACCVIFG) {
-        led_toggle(RED_LED);
-        FCTL3 &= ~ACCVIFG;
-        IE1 |= ACCVIE;
+        led_toggle(RED_LED); //Toggle led
+        FCTL3 &= ~ACCVIFG;   //reset flag
+        IE1 |= ACCVIE;      //Enable the interrupt again 
     }
-
 }
-/*
+
+/*Write 0 to the whole ram */
+
+/* 
 void destroy_ram()
 {
     unsigned char *address = (unsigned char *) 0x1100;
