@@ -1,0 +1,3 @@
+This program uses PWM to dim and brighten a led connected to TA1 (P1.6) of MSP430f2617. The timer runs with 1MHz clock. TACCR0 is set to 10000 with up counting mode and set/reset method is used to generate a 50Hz PWM signal. The width of the pulse is varied by periodically increasing and decreasing the TACCR1 value.
+
+Different count modes with different OUT modes can be used to generate different PWM signals.

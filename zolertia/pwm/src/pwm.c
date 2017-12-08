@@ -25,8 +25,6 @@ void init_mcu()
     TACCR0 = 10000;         //This value sets the frequency of PWM to 50hz
     TACCR1 = 0;             
     TACCTL1  = OUTMOD_3;    //set/Reset method
-    //TACCTL0 |= CCIE;      // enable CCIFG
-    //led_on(GREEN_LED);
 }
 
 #pragma vector=TIMERA1_VECTOR
@@ -36,19 +34,16 @@ __interrupt void Timer_A1(void){
             case 0xA :
                 if((TACCR1 + STEP >= MAX_BRIGHTNESS)) {
                     mode = BRIGHTEN;
-                    //printf_x("up\n");
                 }
                     
                 if((TACCR1 - STEP <= MIN_BRIGHTNESS)) {
                     mode = DIM;
-                    //printf_x("down \n");
                 }
 
                 change_led();
                 break;
 
             case 0x2 :
-      //          led_toggle(BLUE_LED);
                 break;
         }
 }
